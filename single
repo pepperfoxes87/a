@@ -1,0 +1,77 @@
+import pyleoclim as pyleo
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import json
+
+
+
+with open("config.json",'r') as f :
+    confi = f.readlines()
+    confi = "".join(confi)
+    setting = json.loads(confi)
+    
+    
+
+if setting['input_path'].split('.')[-1] == "txt":
+    
+    time,value = np.loadtxt(setting['input_path'],unpack = 'True',usecols=[0,1],skiprows = 1)
+
+    
+    
+elif setting['input_path'].split('.')[-1] == "csv":
+    
+    data=pd.read_csv(
+        setting['input_path'],
+        skiprows=0, header=1
+    )
+    time=data.iloc[:,0]
+    value=data.iloc[:,1]
+
+
+
+number = setting['sample_number_of_AR1']
+qs = setting['confidence_level']
+
+ts1=pyleo.Series(
+    time=time, value=value,
+    
+)
+
+
+method = ['lomb_scargle','periodogram','mtm','welch','wwz_psd',]
+
+
+
+PSD_p = ts1.standardize().interp().spectral(method=method[setting['method']-1],settings={'n50':setting['n50']}  )
+fig, ax = PSD_p.plot(label = 'result')
+
+
+sign = PSD_p.signif_test(qs=qs,number = number)
+sign.plot()
+plt.savefig('spectrum.png')
+
+
+setting_confi =""
+for key, value in setting.items():
+    aKey = key
+    aValue = value
+    setting_confi+=(str(aKey)+":"+str(aValue)+"\n")
+    aKey = ""
+    aValue = ""
+
+output = np.zeros((len(sign.frequency),len(qs)+2))
+
+
+output[:,0] = np.array(PSD_p.frequency)
+output[:,1] = np.array(PSD_p.amplitude)
+
+colwords = "Freq \t PSD"
+
+for i in range(len(qs)):
+    output[:,i+2] = np.array(sign.signif_qs.psd_list[i].amplitude)
+    colwords = colwords+'\t'+str(100*qs[i])+'%confidence_level'
+
+
+
+np.savetxt(setting['output_path'],output,header = setting_confi+'#################################################### \n'+colwords)
