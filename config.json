@@ -1,0 +1,20 @@
+{
+	"input_path":"./LR04_2000ka.txt",
+	"method":1,
+	"n50":3,
+	"sample_number_of_AR1":100,
+	"confidence_level":[0.99,0.95,0.90],
+	"output_path":"./result.txt"
+	
+
+
+
+	
+
+	
+	
+
+
+
+
+}
